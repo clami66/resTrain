@@ -257,6 +257,8 @@ def predict_structure(
     amber_relaxer: None,
     benchmark: bool,
     random_seed: int,
+    restraints: str,
+    optimization_steps: int,
     models_to_relax: ModelsToRelax,
     alignments_only: bool):
   """Predicts structure using AlphaFold for the given sequence."""
@@ -289,8 +291,7 @@ def predict_structure(
     # keep first row in MSA
     feature_dict["msa"][1:, np.where(mask)[0]] = residue_constants.HHBLITS_AA_TO_ID["-"]
 
-  if FLAGS.restraints:
-    logging.info("Using distance restraints: %s", FLAGS.restraints)
+  logging.info("Using distance restraints: %s", restraints)
 
   if not FLAGS.no_feature_pickle:
     features_output_path = os.path.join(output_dir, 'features.pkl')
@@ -306,7 +307,7 @@ def predict_structure(
 
   optimized_feature_dict = None
   best_loss = loss = 1000.0
-  optimization_steps = FLAGS.optimization_steps
+  optimization_steps = optimization_steps
   num_models = len(model_runners)
   model_random_seed = random_seed * num_models
 

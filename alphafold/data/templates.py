@@ -833,9 +833,9 @@ class TemplateHitFeaturizer(abc.ABC):
         * Any feature computation errors.
     """
     self._mmcif_dir = mmcif_dir
-    if not glob.glob(os.path.join(self._mmcif_dir, '*.cif')):
-      logging.error('Could not find CIFs in %s', self._mmcif_dir)
-      raise ValueError(f'Could not find CIFs in {self._mmcif_dir}')
+    #if not glob.glob(os.path.join(self._mmcif_dir, '*.cif')):
+    #  logging.error('Could not find CIFs in %s', self._mmcif_dir)
+    #  raise ValueError(f'Could not find CIFs in {self._mmcif_dir}')
 
     try:
       self._max_template_date = datetime.datetime.strptime(

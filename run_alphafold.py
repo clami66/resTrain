@@ -333,18 +333,18 @@ def predict_structure(
     model_random_seed += 1
 
     t_diff = time.time() - t_0
-    timings[f'predict_and_compile_{model_name}_pred_{pred_n}'] = t_diff
+    timings[f'predict_and_compile_{model_name}_pred_1'] = t_diff
     logging.info(
         'Total JAX model %s on %s predict time (includes compilation time, see --benchmark): %.1fs',
-        f'{model_name}_pred_{pred_n}', fasta_name, t_diff)
+        f'{model_name}_pred_1', fasta_name, t_diff)
 
     plddt = prediction_result['plddt']
-    ranking_confidences[f'{model_name}_pred_{pred_n}'] = prediction_result['ranking_confidence']
+    ranking_confidences[f'{model_name}_pred_1'] = prediction_result['ranking_confidence']
 
     np_prediction_result = _jnp_to_np(dict(prediction_result))
-    result_output_path = os.path.join(output_dir, f'result_{model_name}_pred_{pred_n}.pkl')
+    result_output_path = os.path.join(output_dir, f'result_{model_name}_pred_1.pkl')
 
-    metrics[f'{model_name}_pred_{pred_n}'] = {
+    metrics[f'{model_name}_pred_1'] = {
                           "training_loss": loss if isinstance(loss, float) else loss.item(),
                           "best_training_loss": best_loss if isinstance(best_loss, float) else best_loss.item(),
                           "inference_loss": np_prediction_result['loss'].item() if 'loss' in np_prediction_result else '',
@@ -366,11 +366,11 @@ def predict_structure(
         b_factors=plddt_b_factors,
         remove_leading_feature_dimension=not model_runner.multimer_mode)
 
-    unrelaxed_proteins[f'{model_name}_pred_{pred_n}'] = unrelaxed_protein
-    unrelaxed_pdbs[f'{model_name}_pred_{pred_n}'] = protein.to_pdb(unrelaxed_protein)
-    unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}_pred_{pred_n}.pdb')
+    unrelaxed_proteins[f'{model_name}_pred_1'] = unrelaxed_protein
+    unrelaxed_pdbs[f'{model_name}_pred_1'] = protein.to_pdb(unrelaxed_protein)
+    unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}_pred_1.pdb')
     with open(unrelaxed_pdb_path, 'w') as f:
-      f.write(unrelaxed_pdbs[f'{model_name}_pred_{pred_n}'])
+      f.write(unrelaxed_pdbs[f'{model_name}_pred_1'])
 
   # Rank by model confidence.
   ranked_order = [

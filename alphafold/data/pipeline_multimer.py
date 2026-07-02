@@ -317,9 +317,16 @@ class DataPipeline:
 
         res_idx1 = np.where(np_example["asym_id"] == ch_idx1)[0][0] + int(res1) - 1
         res_idx2 = np.where(np_example["asym_id"] == ch_idx2)[0][0] + int(res2) - 1
-        dist2 = float(d) ** 2
 
-        res_dgram[res_idx1, res_idx2] = res_dgram[res_idx2, res_idx1] = (dist2 > lower_breaks) if self.approximate_restraint else (dist2 > lower_breaks) * (dist2 < upper_breaks)
+        if len(d) == 1:
+          dist2 = float(d[0]) ** 2
+          res_dgram[res_idx1, res_idx2] = res_dgram[res_idx2, res_idx1] = (dist2 > lower_breaks) if self.approximate_restraint else (dist2 > lower_breaks) * (dist2 < upper_breaks)
+        else:
+          assert len(d) == 64, f"ERROR: restraints need to be either a single float or a comma-separated list of 64 floats {d}"
+          d = np.array(d).astype("float")
+          res_dgram[res_idx1, res_idx2] = res_dgram[res_idx2, res_idx1] = d
+
+          sequence_features["restraints_are_distributions"] = True
 
       np_example["restraints_dgram"] = res_dgram
 

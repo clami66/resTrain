@@ -377,6 +377,12 @@ def predict_structure(
       model_name for model_name, confidence in
       sorted(ranking_confidences.items(), key=lambda x: x[1], reverse=True)]
 
+  # Write out relaxed PDBs in rank order.
+  for idx, model_name in enumerate(ranked_order):
+    ranked_output_path = os.path.join(output_dir, f'ranked_{idx}.pdb')
+    with open(ranked_output_path, 'w') as f:
+      f.write(unrelaxed_pdbs[model_name])
+
   ranking_output_path = os.path.join(output_dir, 'ranking_debug.json')
   with open(ranking_output_path, 'w') as f:
     label = 'iptm+ptm' if 'iptm' in prediction_result else 'plddts'

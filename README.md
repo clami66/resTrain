@@ -4,7 +4,7 @@
 
 A simplified version of resTrain is available to run as notebook on Google Colab. Try it by clicking on the button below:
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/clami66/resTrain/blob/main/notebook/resTrain.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/clami66/resTrain/blob/notebook/notebook/resTrain.ipynb)
 
 ## Installing resTrain
 

@@ -316,7 +316,7 @@ class DataPipeline:
 
         res_idx1 = np.where(np_example["asym_id"] == ch_idx1)[0][0] + int(res1) - 1
         res_idx2 = np.where(np_example["asym_id"] == ch_idx2)[0][0] + int(res2) - 1
-        dist2 = float(d) ** 2
+        dist2 = float(d[0]) ** 2
 
         res_dgram[res_idx1, res_idx2] = res_dgram[res_idx2, res_idx1] = (dist2 > lower_breaks) if self.approximate_restraint else (dist2 > lower_breaks) * (dist2 < upper_breaks)
 

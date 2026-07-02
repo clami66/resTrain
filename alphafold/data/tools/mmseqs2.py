@@ -41,8 +41,6 @@ class MMseqs2:
         self.qsc = "0.8"
         self.max_accept = str(max_accept)
 
-        if not self.uniref_db.with_suffix(".dbtype").is_file():
-            raise FileNotFoundError(f"Database {uniref_db} does not exist")
         if (
             not self.uniref_db.with_suffix(".idx").is_file()
             and not self.uniref_db.with_suffix(".idx.index").is_file()

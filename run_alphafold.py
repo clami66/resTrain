@@ -259,8 +259,8 @@ def predict_structure(
     random_seed: int,
     restraints: str,
     optimization_steps: int,
-    models_to_relax: ModelsToRelax,
-    alignments_only: bool):
+    crop_size: int,
+    approximate=False):
   """Predicts structure using AlphaFold for the given sequence."""
   logging.info('Predicting %s', fasta_name)
   timings = {}
@@ -276,32 +276,19 @@ def predict_structure(
   feature_dict = data_pipeline.process(
       input_fasta_path=fasta_path,
       msa_output_dir=msa_output_dir,
-      resume_train=FLAGS.resume_train)
+      resume_train=False)
   timings['features'] = time.time() - t_0
-
-  if alignments_only:
-    logging.info("Finished running alignments, exiting now")
-    return
-
-  if "msa" in feature_dict and FLAGS.msa_mask:
-    mask = np.ones_like(feature_dict["msa"][0])
-    for aa_range in FLAGS.msa_mask:
-      start, finish = (int(n) - 1 for n in aa_range.split(":"))
-      mask[start:finish] = 0
-    # keep first row in MSA
-    feature_dict["msa"][1:, np.where(mask)[0]] = residue_constants.HHBLITS_AA_TO_ID["-"]
 
   logging.info("Using distance restraints: %s", restraints)
 
-  if not FLAGS.no_feature_pickle:
-    features_output_path = os.path.join(output_dir, 'features.pkl')
-    with open(features_output_path, 'wb') as f:
-      pickle.dump(feature_dict, f, protocol=4)
+  
+  features_output_path = os.path.join(output_dir, 'features.pkl')
+  with open(features_output_path, 'wb') as f:
+    pickle.dump(feature_dict, f, protocol=4)
 
   unrelaxed_pdbs = {}
   unrelaxed_proteins = {}
-  relaxed_pdbs = {}
-  relax_metrics = {}
+
   ranking_confidences = {}
   metrics = {}
 
@@ -323,24 +310,16 @@ def predict_structure(
     processed_feature_dict = model_runner.process_features(
             feature_dict, random_seed=model_random_seed)
 
-    if not FLAGS.resume_train or model_name.endswith("optim_1"):
-      processed_feature_dict = model_runner.init_bias(processed_feature_dict)
-
-    if FLAGS.kl or ("restraints_are_distributions" in feature_dict and feature_dict["restraints_are_distributions"]):
-      model_runner.set_kl_loss()
-    
-    if FLAGS.approximate:
+    if approximate:
       model_runner.set_sigmoid_ce_loss()
 
-    model_runner.set_pae_w(FLAGS.pae_w)
     for step in range(optimization_steps):
       train_result, optimized_feature_dict, crop_feat = model_runner.train(processed_feature_dict,
                                                                                 random_seed=model_random_seed,
-                                                                                crop_size=FLAGS.crop_size,
-                                                                                batch_size=FLAGS.batch_size)
+                                                                                crop_size=crop_size,
+                                                                                batch_size=1)
       loss = train_result["distogram_loss"]
-      if FLAGS.increase_seed_during_optimization:
-        model_random_seed += 1
+
       if loss < best_loss:
         logging.info(f"New best loss: {loss}, previous: {best_loss}, (i)pTM: {train_result['iptm'] if 'iptm' in train_result else train_result['ptm']}")
         best_loss = loss
@@ -349,54 +328,50 @@ def predict_structure(
       else:
         logging.info(f"Loss: {loss}, best: {best_loss}, (i)pTM: {train_result['iptm'] if 'iptm' in train_result else train_result['ptm']}")
 
-    for pred_n in range(1, FLAGS.num_predictions_per_model + 1):
-      prediction_result = model_runner.predict(processed_feature_dict,
-                                                random_seed=model_random_seed)
-      model_random_seed += 1
 
-      t_diff = time.time() - t_0
-      timings[f'predict_and_compile_{model_name}_pred_{pred_n}'] = t_diff
-      logging.info(
-          'Total JAX model %s on %s predict time (includes compilation time, see --benchmark): %.1fs',
-          f'{model_name}_pred_{pred_n}', fasta_name, t_diff)
+    prediction_result = model_runner.predict(processed_feature_dict,
+                                              random_seed=model_random_seed)
+    model_random_seed += 1
 
-      plddt = prediction_result['plddt']
-      ranking_confidences[f'{model_name}_pred_{pred_n}'] = prediction_result['ranking_confidence']
+    t_diff = time.time() - t_0
+    timings[f'predict_and_compile_{model_name}_pred_{pred_n}'] = t_diff
+    logging.info(
+        'Total JAX model %s on %s predict time (includes compilation time, see --benchmark): %.1fs',
+        f'{model_name}_pred_{pred_n}', fasta_name, t_diff)
 
-      np_prediction_result = _jnp_to_np(dict(prediction_result))
-      result_output_path = os.path.join(output_dir, f'result_{model_name}_pred_{pred_n}.pkl')
+    plddt = prediction_result['plddt']
+    ranking_confidences[f'{model_name}_pred_{pred_n}'] = prediction_result['ranking_confidence']
 
-      metrics[f'{model_name}_pred_{pred_n}'] = {
-                            "training_loss": loss if isinstance(loss, float) else loss.item(),
-                            "best_training_loss": best_loss if isinstance(best_loss, float) else best_loss.item(),
-                            "inference_loss": np_prediction_result['loss'].item() if 'loss' in np_prediction_result else '',
-                            "ptm": np_prediction_result['ptm'].item(),
-                            "iptm": np_prediction_result['iptm'].item() if 'iptm' in np_prediction_result else '',
-                            "ranking_confidence": np_prediction_result['ranking_confidence'].item(),
-                            }
+    np_prediction_result = _jnp_to_np(dict(prediction_result))
+    result_output_path = os.path.join(output_dir, f'result_{model_name}_pred_{pred_n}.pkl')
 
-      if FLAGS.reduce_outputs:
-        keep = ['predicted_aligned_error', 'plddt', 'ptm', 'iptm', 'ranking_confidence', 'msa_mask'] # 'distogram'
-        np_prediction_result = {k: v for k, v in np_prediction_result.items() if k in keep}
+    metrics[f'{model_name}_pred_{pred_n}'] = {
+                          "training_loss": loss if isinstance(loss, float) else loss.item(),
+                          "best_training_loss": best_loss if isinstance(best_loss, float) else best_loss.item(),
+                          "inference_loss": np_prediction_result['loss'].item() if 'loss' in np_prediction_result else '',
+                          "ptm": np_prediction_result['ptm'].item(),
+                          "iptm": np_prediction_result['iptm'].item() if 'iptm' in np_prediction_result else '',
+                          "ranking_confidence": np_prediction_result['ranking_confidence'].item(),
+                          }
 
-      with open(result_output_path, 'wb') as f:
-        pickle.dump(np_prediction_result, f, protocol=4)
+    with open(result_output_path, 'wb') as f:
+      pickle.dump(np_prediction_result, f, protocol=4)
 
       # Add the predicted LDDT in the b-factor column.
       # Note that higher predicted LDDT value means higher model confidence.
-      plddt_b_factors = np.repeat(
-          plddt[:, None], residue_constants.atom_type_num, axis=-1)
-      unrelaxed_protein = protein.from_prediction(
-          features=processed_feature_dict,
-          result=prediction_result,
-          b_factors=plddt_b_factors,
-          remove_leading_feature_dimension=not model_runner.multimer_mode)
+    plddt_b_factors = np.repeat(
+        plddt[:, None], residue_constants.atom_type_num, axis=-1)
+    unrelaxed_protein = protein.from_prediction(
+        features=processed_feature_dict,
+        result=prediction_result,
+        b_factors=plddt_b_factors,
+        remove_leading_feature_dimension=not model_runner.multimer_mode)
 
-      unrelaxed_proteins[f'{model_name}_pred_{pred_n}'] = unrelaxed_protein
-      unrelaxed_pdbs[f'{model_name}_pred_{pred_n}'] = protein.to_pdb(unrelaxed_protein)
-      unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}_pred_{pred_n}.pdb')
-      with open(unrelaxed_pdb_path, 'w') as f:
-        f.write(unrelaxed_pdbs[f'{model_name}_pred_{pred_n}'])
+    unrelaxed_proteins[f'{model_name}_pred_{pred_n}'] = unrelaxed_protein
+    unrelaxed_pdbs[f'{model_name}_pred_{pred_n}'] = protein.to_pdb(unrelaxed_protein)
+    unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}_pred_{pred_n}.pdb')
+    with open(unrelaxed_pdb_path, 'w') as f:
+      f.write(unrelaxed_pdbs[f'{model_name}_pred_{pred_n}'])
 
   # Rank by model confidence.
   ranked_order = [

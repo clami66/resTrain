@@ -272,6 +272,7 @@ class DataPipeline:
         bfd_msa = parsers.parse_a3m(hhblits_bfd_uniref_result['a3m'])
       logging.info('BFD MSA size: %d sequences.', len(bfd_msa))
     # TEMPLATES
+    """
     if mmseqs2_msa:
       msa_for_templates = mmseqs2_result['a3m']
     else:
@@ -297,9 +298,8 @@ class DataPipeline:
     else: # read a pre-existing pdb_hits.sto file
       with open(pdb_hits_out_path) as f:
         pdb_templates_result = f.read()
-
-    pdb_template_hits = self.template_searcher.get_template_hits(
-        output_string=pdb_templates_result, input_sequence=input_sequence)
+    """
+    pdb_template_hits = []
 
     templates_result = self.template_featurizer.get_templates(
         query_sequence=input_sequence,

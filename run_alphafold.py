@@ -254,7 +254,6 @@ def predict_structure(
     output_dir_base: str,
     data_pipeline: Union[pipeline.DataPipeline, pipeline_multimer.DataPipeline],
     model_runners: Dict[str, model.RunModel],
-    amber_relaxer: None,
     benchmark: bool,
     random_seed: int,
     restraints: str,

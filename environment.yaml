@@ -1,0 +1,15 @@
+name: resTrain
+channels:
+  - conda-forge
+  - bioconda
+  - nvidia
+dependencies:
+  - aria2
+  - openmm=8.0.0
+  - pdbfixer=1.7
+  - cudnn=8.9.7.29
+  - tmalign
+  - kalign3=3.2.2
+  - hhsuite=3.3.0
+  - hmmer=3.3.2
+  - cuda-nvcc

@@ -3,6 +3,8 @@ biopython==1.79
 dm-haiku==0.0.12
 docker==5.0.0
 jax==0.4.26
+jaxlib==0.4.26+cuda12.cudnn89
+-f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 matplotlib==3.8.0
 ml-collections==0.1.0
 numpy==1.24.3

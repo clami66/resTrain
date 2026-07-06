@@ -8,6 +8,20 @@ A simplified version of resTrain is available to run as notebook on Google Colab
 
 ## Installing resTrain
 
+### With Docker (recommended)
+
+1. Pull the image from Docker Hub. 
+```
+docker image pull clami66/restrain
+```
+
+Alternatively, use the provided Dockerfile to build the image from scratch.
+
+2. Run from the docker image while mapping the necessary directories with `-v` and the GPU devices with `--gpus`, e.g.:
+```
+docker run -v /home:/home --gpus device=0  clami66/restrain run_alphafold.py ...
+```
+
 ### Stand-alone installation
 
 If you don't wish to use a Docker image, the installation and setup procedure is as follows:
@@ -26,20 +40,6 @@ conda env create --file=environment.yaml
 conda activate resTrain
 
 python -m pip install -r requirements.txt
-```
-
-### With Docker
-
-1. Pull the image from Docker Hub. 
-```
-docker image pull clami66/restrain
-```
-
-Alternatively, use the provided Dockerfile to build the image from scratch.
-
-2. Run from the docker image while mapping the necessary directories with `-v` and the GPU devices with `--gpus`, e.g.:
-```
-docker run -v /home:/home --gpus device=0  clami66/restrain run_alphafold.py ...
 ```
 
 ### Setting up the databases

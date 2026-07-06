@@ -39,7 +39,7 @@ Alternatively, use the provided Dockerfile to build the image from scratch.
 
 2. Run from the docker image while mapping the necessary directories with `-v` and the GPU devices with `--gpus`, e.g.:
 ```
-docker run -v /home:/home --gpus device=0  restrain run_alphafold.py ...
+docker run -v /home:/home --gpus device=0  clami66/restrain:test run_alphafold.py ...
 ```
 
 ### Setting up the databases

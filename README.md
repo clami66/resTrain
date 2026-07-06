@@ -32,7 +32,7 @@ python -m pip install -r requirements.txt
 
 1. Pull the image from Docker Hub. 
 ```
-docker image pull clami66/restrain
+docker image pull clami66/restrain:test
 ```
 
 Alternatively, use the provided Dockerfile to build the image from scratch.
